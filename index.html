@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SkeletonDancer Dance project</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .project-header {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #0f0;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .project-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #0f0;
+            color: #fff;
+        }
+
+        .project-description {
+            font-size: 16px;
+            color: #0a0;
+            margin-bottom: 15px;
+        }
+
+        .skeleton-display {
+            font-size: 24px;
+            line-height: 1.2;
+            letter-spacing: 2px;
+            margin: 20px 0;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #0f0;
+            border-radius: 15px;
+            white-space: pre;
+            font-family: 'Courier New', monospace;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: linear-gradient(45deg, #0f0, #0a0);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #0c0, #080);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #0f0;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #0f0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .dance-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #0a0;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #0a0;
+        }
+
+        .dance-info h3 {
+            margin-top: 0;
+            color: #0f0;
+        }
+
+        .dance-info ul {
+            text-align: left;
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .dance-info li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="project-header">
+            <h1 class="project-title">SkeletonDancer Dance Project</h1>
+            <p class="project-description">Creates an empty SkeletonDancer Dance project</p>
+            <div class="status" id="projectStatus">Проект инициализирован • Git репозиторий создан</div>
+        </div>
+
+        <div class="skeleton-display" id="skeletonDisplay">
+            o
+            /|\
+            / \
+        </div>
+
+        <div class="controls">
+            <button onclick="startDance()">Начать танец</button>
+            <button onclick="stopDance()">Остановить</button>
+            <button onclick="singleMove()">Одно движение</button>
+            <button onclick="resetSkeleton()">Сбросить</button>
+        </div>
+
+        <div class="dance-info">
+            <h3>Доступные команды танца:</h3>
+            <ul>
+                <li>Руки: к голове, на бедра, в исходное положение</li>
+                <li>Ноги: внутрь, наружу</li>
+                <li>Поворот: смена направления взгляда</li>
+            </ul>
+            <p>Скелет будет выполнять случайные движения танца с интервалом 400мс</p>
+        </div>
+    </div>
+
+    <script>
+        class SkeletonDancer {
+            constructor() {
+                this.skeleton = [
+                    [" ", "o", " "],
+                    ["/", "|", "\\"],
+                    ["/", " ", "\\"]
+                ];
+                this.front = true;
+                this.danceCommands = [
+                    'leftHandToHead', 'leftHandToHip', 'leftHandToStart',
+                    'leftLegIn', 'leftLegOut',
+                    'rightHandToHead', 'rightHandToHip', 'rightHandToStart',
+                    'rightLegIn', 'rightLegOut', 'turn'
+                ];
+            }
+
+            display() {
+                const display = document.getElementById('skeletonDisplay');
+                if (this.front) {
+                    display.textContent = this.skeleton.map(row => row.join('')).join('\n');
+                } else {
+                    // Зеркальное отображение для заднего вида
+                    const mirrored = this.skeleton.map(row => {
+                        return row.map(char => {
+                            const mirrorMap = { "/": "\\", "\\": "/", "o": "o", "|": "|", " ": " " };
+                            return mirrorMap[char] || char;
+                        }).reverse().join('');
+                    }).join('\n');
+                    display.textContent = mirrored;
+                }
+            }
+
+            getHand(left, position) {
+                const leftHands = ["/", "(", "<"];
+                const rightHands = ["\\", ")", ">"];
+                return left ? leftHands[position] : rightHands[position];
+            }
+
+            getLeg(left, position) {
+                const leftLegs = ["/", "<"];
+                const rightLegs = ["\\", ">"];
+                return left ? leftLegs[position] : rightLegs[position];
+            }
+
+            // Команды танца
+            leftHandToHead() {
+                this.skeleton[0][0] = " ";
+                this.skeleton[1][0] = " ";
+                this.skeleton[0][0] = this.getHand(true, 1);
+            }
+
+            leftHandToHip() {
+                this.skeleton[0][0] = " ";
+                this.skeleton[1][0] = " ";
+                this.skeleton[1][0] = this.getHand(true, 2);
+            }
+
+            leftHandToStart() {
+                this.skeleton[0][0] = " ";
+                this.skeleton[1][0] = " ";
+                this.skeleton[1][0] = this.getHand(true, 0);
+            }
+
+            leftLegIn() {
+                this.skeleton[2][0] = this.getLeg(true, 1);
+            }
+
+            leftLegOut() {
+                this.skeleton[2][0] = this.getLeg(true, 0);
+            }
+
+            rightHandToHead() {
+                this.skeleton[0][2] = " ";
+                this.skeleton[1][2] = " ";
+                this.skeleton[0][2] = this.getHand(false, 1);
+            }
+
+            rightHandToHip() {
+                this.skeleton[0][2] = " ";
+                this.skeleton[1][2] = " ";
+                this.skeleton[1][2] = this.getHand(false, 2);
+            }
+
+            rightHandToStart() {
+                this.skeleton[0][2] = " ";
+                this.skeleton[1][2] = " ";
+                this.skeleton[1][2] = this.getHand(false, 0);
+            }
+
+            rightLegIn() {
+                this.skeleton[2][2] = this.getLeg(false, 1);
+            }
+
+            rightLegOut() {
+                this.skeleton[2][2] = this.getLeg(false, 0);
+            }
+
+            turn() {
+                this.front = !this.front;
+            }
+
+            executeCommand(commandName) {
+                if (this[commandName]) {
+                    this[commandName]();
+                    this.display();
+                    return commandName;
+                }
+                return null;
+            }
+
+            getRandomCommand(exclude = null) {
+                let availableCommands = this.danceCommands;
+                if (exclude) {
+                    availableCommands = this.danceCommands.filter(cmd => cmd !== exclude);
+                }
+                return availableCommands[Math.floor(Math.random() * availableCommands.length)];
+            }
+
+            reset() {
+                this.skeleton = [
+                    [" ", "o", " "],
+                    ["/", "|", "\\"],
+                    ["/", " ", "\\"]
+                ];
+                this.front = true;
+                this.display();
+            }
+        }
+
+        let dancer = new SkeletonDancer();
+        let danceInterval = null;
+        let lastCommand = null;
+
+        function startDance() {
+            if (danceInterval) return;
+
+            danceInterval = setInterval(() => {
+                const command = dancer.getRandomCommand(lastCommand);
+                lastCommand = command;
+                dancer.executeCommand(command);
+
+                // Обновляем статус
+                const commandNames = {
+                    'leftHandToHead': 'Левая рука к голове',
+                    'leftHandToHip': 'Левая рука на бедро',
+                    'leftHandToStart': 'Левая рука в исходное',
+                    'leftLegIn': 'Левая нога внутрь',
+                    'leftLegOut': 'Левая нога наружу',
+                    'rightHandToHead': 'Правая рука к голове',
+                    'rightHandToHip': 'Правая рука на бедро',
+                    'rightHandToStart': 'Правая рука в исходное',
+                    'rightLegIn': 'Правая нога внутрь',
+                    'rightLegOut': 'Правая нога наружу',
+                    'turn': 'Поворот'
+                };
+                document.getElementById('projectStatus').textContent =
+                    `Танцует... • ${commandNames[command]}`;
+            }, 400);
+        }
+
+        function stopDance() {
+            if (danceInterval) {
+                clearInterval(danceInterval);
+                danceInterval = null;
+                document.getElementById('projectStatus').textContent =
+                    'Танец остановлен • Готов к новым командам';
+            }
+        }
+
+        function singleMove() {
+            const command = dancer.getRandomCommand(lastCommand);
+            lastCommand = command;
+            dancer.executeCommand(command);
+
+            const commandNames = {
+                'leftHandToHead': 'Левая рука к голове',
+                'leftHandToHip': 'Левая рука на бедро',
+                'leftHandToStart': 'Левая рука в исходное',
+                'leftLegIn': 'Левая нога внутрь',
+                'leftLegOut': 'Левая нога наружу',
+                'rightHandToHead': 'Правая рука к голове',
+                'rightHandToHip': 'Правая рука на бедро',
+                'rightHandToStart': 'Правая рука в исходное',
+                'rightLegIn': 'Правая нога внутрь',
+                'rightLegOut': 'Правая нога наружу',
+                'turn': 'Поворот'
+            };
+            document.getElementById('projectStatus').textContent =
+                `Выполнено: ${commandNames[command]}`;
+        }
+
+        function resetSkeleton() {
+            dancer.reset();
+            lastCommand = null;
+            document.getElementById('projectStatus').textContent =
+                'Скелет сброшен • Готов к танцу';
+        }
+
+        // Инициализация
+        dancer.display();
+    </script>
+</body>
+
+</html>
